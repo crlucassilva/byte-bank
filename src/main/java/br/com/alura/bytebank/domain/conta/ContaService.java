@@ -19,7 +19,8 @@ public class ContaService {
     private Set<Conta> contas = new HashSet<>();
 
     public Set<Conta> listarContasAbertas() {
-        return contas;
+        Connection conn = connection.recuperarConexao();
+        return new ContaDao(conn).listar();
     }
 
     public BigDecimal consultarSaldo(Integer numeroDaConta) {
@@ -64,10 +65,12 @@ public class ContaService {
     }
 
     private Conta buscarContaPorNumero(Integer numero) {
-        return contas
-                .stream()
-                .filter(c -> c.getNumero().equals(numero))
-                .findFirst()
-                .orElseThrow(() -> new RegraDeNegocioException("Não existe conta cadastrada com esse número!"));
+       Connection conn = connection.recuperarConexao();
+       Conta conta = new ContaDao(conn).buscarContaPorNumero(numero);
+       if (conta != null) {
+           return conta;
+       } else {
+           throw new RegraDeNegocioException("Não existe conta com esse número.");
+       }
     }
 }
