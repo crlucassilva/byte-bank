@@ -22,7 +22,7 @@ public class ContaDao {
     public void salvar(DadosAberturaConta dadosDaConta) {
         String sql = "INSERT INTO tbconta (numero, saldo, cliente_nome, cliente_cpf, cliente_email) VALUES (?, ?, ?, ?, ?)";
         var cliente = new Cliente(dadosDaConta.dadosCliente());
-        var conta = new Conta(dadosDaConta.numero(), cliente);
+        var conta = new Conta(dadosDaConta.numero(), BigDecimal.ZERO, cliente);
 
         try {
             PreparedStatement ps = conn.prepareStatement(sql);
@@ -58,7 +58,7 @@ public class ContaDao {
 
                 DadosCadastroCliente dados = new DadosCadastroCliente(nome, cpf, email);
                 Cliente cliente = new Cliente(dados);
-                contas.add(new Conta(numero, cliente));
+                contas.add(new Conta(numero, saldo, cliente));
             }
             rs.close();
             ps.close();
@@ -71,7 +71,7 @@ public class ContaDao {
 
     public Conta buscarContaPorNumero(Integer numero) {
         Conta conta = null;
-        String sql = "SELECT * FROM tbcontas WHERE numero = ?";
+        String sql = "SELECT * FROM tbconta WHERE numero = ?";
 
         try {
             PreparedStatement ps = conn.prepareStatement(sql);
@@ -88,7 +88,7 @@ public class ContaDao {
                 DadosCadastroCliente dados = new DadosCadastroCliente (nome, cpf, email);
                 Cliente cliente = new Cliente(dados);
 
-                conta = new Conta(numeroRecuperado, cliente);
+                conta = new Conta(numeroRecuperado, saldo, cliente);
             }
             rs.close();
             ps.close();
@@ -97,5 +97,28 @@ public class ContaDao {
             throw new RuntimeException(e);
         }
         return conta;
+    }
+
+    public void alterar(Integer numeroDaConta, BigDecimal valor) {
+        String sql = "UPDATE tbconta SET saldo = ? WHERE numero = ?";
+
+        try {
+            conn.setAutoCommit(false);
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setBigDecimal(1, valor);
+            ps.setInt(2, numeroDaConta);
+
+            ps.execute();
+            conn.commit();
+            ps.close();
+            conn.close();
+        } catch (SQLException e) {
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+            throw new RuntimeException(e);
+        }
     }
 }
